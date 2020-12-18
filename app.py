@@ -33,7 +33,7 @@ def add_user():
     return '200'
 
 # Add new movie to user's movie array
-@app.route('/db/users/<string:username>', methods=['PUT'])
+@app.route('/db/library/<string:username>', methods=['PUT'])
 def add_movie(username):
     id = request.json['id']
     title = request.json['title']
@@ -70,15 +70,26 @@ def get_one_in_all():
     return json_data
 
 # Gets movie list and username from every user
-@app.route('/db/users', methods=['GET'])
+@app.route('/db/library', methods=['GET'])
 def get_all():
     cursor = movie.find({}, { "username" : 1.0, "movies" : 1.0, "_id": 0.0 })
     list_cur = list(cursor)
     json_data = dumps(list_cur)
     return json_data
 
-# Gets movie list by username
-@app.route('/db/users/<string:username>', methods=['GET'])
+# Removes a movie from a user's library by id
+@app.route('/db/library/<string:username>', methods=['DELETE'])
+def delete_movie(username):
+    movie_to_delete = request.json['id']
+    print(movie_to_delete)
+    cursor = movie.update_one({'username': username}, 
+    {"$pull": {"movies": {"id": movie_to_delete}}}
+    )
+    return '200'
+
+
+# Gets movie library by username
+@app.route('/db/library/<string:username>', methods=['GET'])
 def get_library(username):
     cursor = movie.find({ "username" : username }, { "movies" : 1.0, "_id" : 0.0 })
     list_cur = list(cursor)
