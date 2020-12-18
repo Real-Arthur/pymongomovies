@@ -18,37 +18,72 @@ movie = db.movie
 def index():
     return 'Go for pymongomovies'
 
+# Create new user
+@app.route('/db/users', methods=['POST'])
+def add_user():
+    username = request.json['username']
+    password = request.json['password']
+    cursor = movie.insert_one(
+        {
+            "username": username,
+            "password": password,
+            "movies": []
+        }
+    )
+    return '200'
+
+# Add new movie to user's movie array
+@app.route('/db/users/<string:username>', methods=['PUT'])
+def add_movie(username):
+    id = request.json['id']
+    title = request.json['title']
+    overview = request.json['overview']
+    release_date = request.json['release_date']
+    poster_path = request.json['poster_path']
+    cursor = movie.update_one(
+        {
+            "username": username
+        },
+        {
+            "$push":
+            { "movies":
+                {
+                    "id" : id,
+                    "title" : title, 
+                    "overview" : overview, 
+                    "release_date" : release_date, 
+                    "poster_path" : poster_path
+                }
+            }
+        }
+    )
+    return '200'
 
 # test route
 #### instances of users with Pulp Fiction in movie list
 @app.route('/db/common')
 def get_one_in_all():
-    cursor = movie.find({"movies.title": "Pulp Fiction"},{"username": 1.0, "_id": 0})
+    movie_to_find = request.json['query']
+    cursor = movie.find({"movies.title": movie_to_find},{"username": 1.0, "_id": 0})
     list_cur = list(cursor)
     json_data = dumps(list_cur)
     return json_data
 
 # Gets movie list and username from every user
-@app.route('/db/users')
+@app.route('/db/users', methods=['GET'])
 def get_all():
     cursor = movie.find({}, { "username" : 1.0, "movies" : 1.0, "_id": 0.0 })
     list_cur = list(cursor)
     json_data = dumps(list_cur)
     return json_data
 
-@app.route('/db/users/<string:username>')
+# Gets movie list by username
+@app.route('/db/users/<string:username>', methods=['GET'])
 def get_library(username):
-    cursor = movie.find({ 
-        "username" : username
-    }, 
-    { 
-        "movies" : 1.0, 
-        "_id" : 0.0
-    })
+    cursor = movie.find({ "username" : username }, { "movies" : 1.0, "_id" : 0.0 })
     list_cur = list(cursor)
     json_data = dumps(list_cur)
     return json_data
-
 
 # Searches The Movie Database API for queried actor/actress
 # Data provided by api.py get_person
